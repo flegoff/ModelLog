@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+
 from hashlib import sha256
 import logging
-import settings
 import json
+from django.conf import settings
 
 def at_log(log):
     """
@@ -27,10 +28,10 @@ def at_log(log):
             logging.warning('{0} key missing in the log message'.format(key))
 
     log_keys = log.keys()
-    log_keys.sort()
     log_hash = sha256(settings.SECRET_KEY)
-    for key in log_keys:
-        log_hash.update(str(log[key]))
-    log['signature'] = log_hash.hexdigest()
 
-    settings.logger.info(json.dumps(log))
+    for key in log_keys.sort():
+        log_hash.update(str(log[key]))
+    
+    log['signature'] = log_hash.hexdigest()
+    logging.info(json.dumps(log))

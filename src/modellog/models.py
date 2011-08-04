@@ -34,39 +34,49 @@ class ModelLog(models.Model):
         log['user_id'] = user_id
         log['source_id'] = socket.gethostname()
         log['instance_id'] = self.id
+
         try:
             log['instance_id_type'] = str(getattr(self, 'Meta').id_type)
         except AttributeError:
             logging.warning('{0} has no meta id_type attribute'.format(type(self)))
             log['instance_id_type'] = 'unknown'
+
         if request is not None:
             log['access_point_ip'] = request.get_host()
         else:
             logging.warning('unspecified access point ip')
             log['access_point_ip'] = 'unknown'
+
         return log
+
 
     def save(self, event_id, user_id, request = None):
         log = {}
         prev_id = self.id
+        
         try:
             super(ModelLog, self).save()
             log['event_outcome'] = self.LOG_OUTCOME_SUCCESS
+        
         except Exception as e:
             log['event_outcome'] = self.LOG_OUTCOME_ERROR
             at_log.at_log(log)
             raise e
+    
         else:
             if prev_id is None:
                 log['event_action_code'] = self.LOG_ACTION_CREATE
             else:
                 log['event_action_code'] = self.LOG_ACTION_UPDATE
+        
             self.__log_data_collect(log, event_id, user_id, request)
             at_log.at_log(log)
+
 
     def delete(self, event_id, user_id, request = None):
         log = {'event_action_code': self.LOG_ACTION_DELETE}
         self.__log_data_collect(log, event_id, user_id, request)
+        
         try:
             super(ModelLog, self).delete()
             log['event_outcome'] = self.LOG_OUTCOME_SUCCESS

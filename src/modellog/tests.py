@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.test import TestCase
 from models import ModelLog
-from datetime import datetime, timedelta
 from socket import gethostname
 from hashlib import sha256
-import unittest
-import settings
+from django.conf import settings
 import logging
 import json
 from random import randint
@@ -21,24 +19,25 @@ class ModelLogTestCase(TestCase):
         log = json.loads(file_lines[len(file_lines) - 1])
 
         for required in (
-        'event_id',             #5.1.1. Event ID                        required
-        'event_action_code',    #5.1.2. Event Action Code,              optional
-        'event_date',           #5.1.3. Event Date/Time                 required
-        'event_outcome',        #5.1.4. Event Outcome Indicator         required
-        'user_id',              #5.2.1. User ID                         required
-        'access_point_ip',      #5.3.2. Network Access Point ID         optional
-        'source_id',            #5.4.2. Audit Source ID                 required
-        'instance_id_type',     #5.5.4. Participant Object ID Type Code required
-        'instance_id',          #5.5.6. Participant Object ID           required
+            'event_id',             #5.1.1. Event ID                        required
+            'event_action_code',    #5.1.2. Event Action Code,              optional
+            'event_date',           #5.1.3. Event Date/Time                 required
+            'event_outcome',        #5.1.4. Event Outcome Indicator         required
+            'user_id',              #5.2.1. User ID                         required
+            'access_point_ip',      #5.3.2. Network Access Point ID         optional
+            'source_id',            #5.4.2. Audit Source ID                 required
+            'instance_id_type',     #5.5.4. Participant Object ID Type Code required
+            'instance_id',          #5.5.6. Participant Object ID           required
         ):
             self.assertTrue(required in log.keys())
 
         log_keys = log.keys()
-        log_keys.sort()
         log_hash = sha256(settings.SECRET_KEY)
-        for key in log_keys:
-            if key != 'signature':
-                log_hash.update(str(log[key]))
+
+        for key in log_keys.sort():
+            if key == 'signature':
+                continue
+            log_hash.update(str(log[key]))
 
         self.assertEqual(log['event_id'], event_id)
         self.assertEqual(log['event_action_code'], event_action_code)
